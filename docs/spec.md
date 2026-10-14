@@ -1,36 +1,99 @@
 # Spec: porting features from the Storefront child theme
 
-Status 2026-10-15: the theme switch to Twenty Twenty-Five is done. Cart and checkout run as shortcodes (checkout still to be confirmed in the editor). Everything that is handled in the Site Editor is not listed here.
+Status 2026-10-15: the theme switch to Twenty Twenty-Five is done. Cart and checkout run as shortcodes (`[woocommerce_cart]`, `[woocommerce_checkout]`). Free shipping is configured as a "Free shipping" method with a minimum order amount.
 
-Paths like `functions.php:221` refer to the old child theme `youngandcold/` (outside this repo). **[Code]** = verified in the WooCommerce 11.2.1 source. No jQuery in plugin code (plain JavaScript).
+Paths like `functions.php:221` refer to the old child theme `youngandcold/` (outside this repo). **[Code]** = verified in the WooCommerce 11.2.1 source.
 
----
+## Features
 
-## 1. Features
-
-| Prio | Feature | What it does | Origin | Implementation |
-|---|---|---|---|---|
-| **High** | Release date | Notice box "Releasetermin / Release date: …" on the product page, only when the meta `release_date` is set | `functions.php:221-232` | Hook `woocommerce_single_product_summary` (25), `get_post_meta($id, 'release_date', true)`. Port as is. |
-| **Medium** | Phone required per shipping zone | Phone becomes required when the chosen shipping method belongs to zone 0 ("Rest of the world") or 3 ("Amerika"): PHP validation, JS toggles the field live, 3 CSS rules (hide `.optional`, hide the WC asterisk, own `*` via `.is-phone-required::after`) | `functions.php:237-370`, Customizer CSS | `woocommerce_checkout_fields` (20), `woocommerce_after_checkout_validation`. JS without jQuery: delegated `change` listener on `input[name^="shipping_method"]` + `MutationObserver` on `#order_review` (WC's `updated_checkout` is a jQuery event, invisible to native JS). Requires the shortcode checkout [Code]. |
-| **Medium** | Free shipping notice | In the cart: "X € more for free shipping" or "Free shipping!" | was CSS `content` attached to `flat_rate:2` (`style.css:518-528`) | Hook `woocommerce_before_cart_totals`. **Read the threshold from the shipping settings** (customer's zone → method `free_shipping` → `min_amount`), compare with `WC()->cart->get_displayed_subtotal()`, output via `wc_print_notice()`. No hard-coded 75 €. **Open:** is the threshold configured as a "Free shipping" method with a minimum order amount? |
-| **Medium** | Audio player | Player on the product page: HTML5 playlist from the Pods release (`release_listen` → CPT `release`, field `files`); without a release, a Bandcamp/SoundCloud iframe (`bandcamp_album_id`, `soundcloud_id`, `single_track`) loaded on click | `inc/yuc-template-functions.php:3-103`, `content-release.php:16-67`, `assets/javascript/audio-player.js`, `style.css:248-310` | **Shortcode `[yuc_player]`**, placed in the product template in the Site Editor. This keeps the player visible for out-of-stock products (the old hook `woocommerce_after_add_to_cart_button` does not fire there because WC renders no button [Code]). Load the template file from the plugin. Rewrite the JS in plain JavaScript and fix: last track is skipped (`audio-player.js:42-51`), script grabs every `<audio>` on the page. |
-| **Low** | Contact form when out of stock | CF7 form 4669 instead of the add-to-cart button | `functions.php:112-121` | Hook `woocommerce_single_product_summary` (30), `do_shortcode('[contact-form-7 id="4669"]')`. Port as is. |
+| Prio | Feature | Value |
+|---|---|---|
+| High | Release date | Customers see when a pre-order ships |
+| Medium | Phone required per shipping zone | Carriers outside the EU need a phone number; orders without one get stuck |
+| Medium | Free shipping notice | Nudges customers towards the free shipping threshold |
+| Medium | Audio player | Customers can listen to the release on the product page |
+| Low | Contact form when out of stock | Customers can ask about sold-out items instead of leaving |
 
 ---
 
-## 2. Structure
+## 1. Release date
+
+Origin: `functions.php:221-232`.
+
+Shows a notice box "Releasetermin / Release date: {date}" on the product page when the product meta `release_date` is set.
+
+- Hook `woocommerce_single_product_summary`, priority 25. In the block template this renders directly before the short description [Code].
+- Read with `get_post_meta( $product_id, 'release_date', true )`.
+- **New:** hide the box automatically once the release date has passed. Parse the stored value with `DateTimeImmutable`; show only while the date is today or in the future (site timezone, `wp_timezone()`). If the value cannot be parsed, show it as before so existing data keeps working. The stored format is to be checked on a live product before implementing.
+- Output escaped with `esc_html`.
+
+## 2. Phone required per shipping zone
+
+Origin: `functions.php:237-370` plus three rules from the old Customizer CSS.
+
+The billing phone becomes required when the chosen shipping method belongs to shipping zone 0 ("Rest of the world") or 3 ("Amerika").
+
+- Resolve the rate IDs (`method_id:instance_id`) of all enabled methods in those zones via `WC_Shipping_Zones::get_zone()`; compare with `WC()->session->get( 'chosen_shipping_methods' )`.
+- `woocommerce_checkout_fields` (priority 20): set `billing_phone['required']` accordingly, so the server renders the field as required when the method is already chosen.
+- `woocommerce_after_checkout_validation`: add an error if the phone is empty while required. This is the actual enforcement.
+- JS (`assets/checkout-phone.js`, plain JavaScript, loaded only on the checkout page): keep the field's `required` state and label in sync when the customer changes the shipping method. Listen with a delegated `change` listener on `input[name^="shipping_method"]` and a `MutationObserver` on `#order_review`, because WooCommerce's `updated_checkout` is a jQuery-only event. Toggle the class `is-phone-required` on `#billing_phone_field`.
+- CSS (`assets/checkout-phone.css`): hide the "(optional)" label text and WooCommerce's asterisk on the phone field; render an own asterisk via `.is-phone-required label::after`.
+- Requires the shortcode checkout; the Checkout block does not apply these hooks [Code].
+
+## 3. Free shipping notice
+
+Origin: a CSS `content` rule attached to `flat_rate:2` (`style.css:518-528`). Replaced by a real notice.
+
+Shows on the cart page: "Noch {amount} bis zum kostenlosen Versand" while below the threshold, "Versandkostenfrei!" once reached.
+
+- Hook `woocommerce_before_cart_totals`.
+- Read the threshold from the shipping settings instead of hard-coding it: zone for the current customer via `WC_Shipping_Zones::get_zone_matching_package()`, then the enabled `free_shipping` method and its `min_amount`. No notice if the zone has no such method.
+- Compare with `WC()->cart->get_displayed_subtotal()` (respects the "requires" setting of the method only as far as the minimum amount is concerned; coupon-based free shipping is out of scope).
+- Output via `wc_print_notice( $text, 'notice' )`, amount formatted with `wc_price()`.
+
+## 4. Audio player
+
+Origin: `inc/yuc-template-functions.php:3-103`, `content-release.php:16-67`, `assets/javascript/audio-player.js`, `style.css:248-310`.
+
+Plays the release on the product page. Two variants, decided by Pods fields on the product:
+
+1. `release_listen` set → the linked `release` post provides `files` (MP3 attachments). Render an HTML5 `<audio>` element with a playlist, track title, previous/next controls.
+2. No release, but `bandcamp_album_id` or `soundcloud_id` set → a "▶ Listen to {title}" trigger; on click, replace it with the Bandcamp or SoundCloud iframe (`single_track` decides between track and album/playlist embed). The iframe is not loaded before the click.
+
+Implementation:
+
+- Shortcode `[yuc_player]`, placed in the Single Product template in the Site Editor. Unlike the old hook `woocommerce_after_add_to_cart_button`, this also renders for out-of-stock products (WooCommerce renders no add-to-cart form there [Code]).
+- Template `templates/release-player.php` for the playlist markup; iframe markup inline in the shortcode callback.
+- `assets/audio-player.js` in plain JavaScript, scoped to the player container (not every `<audio>` on the page). Fix the old off-by-one: the last track was skipped on auto-advance (`audio-player.js:42-51`). Assets enqueued only when the shortcode renders.
+- `assets/audio-player.css` from `style.css:248-310`.
+- Pods access via `pods( 'product', $id )->field( … )`; the release's `files` field returns attachment arrays (`guid`, `post_title`).
+
+## 5. Contact form when out of stock
+
+Origin: `functions.php:112-121`.
+
+Shows Contact Form 7 form 4669 on the product page when the product is not in stock.
+
+- Hook `woocommerce_single_product_summary`, priority 30.
+- `if ( ! $product->is_in_stock() ) echo do_shortcode( '[contact-form-7 id="4669"]' );`
+- Port as is; no change in behaviour.
+
+---
+
+## Structure
 
 The repository root is the plugin directory (`wp-content/plugins/yuc-shop-features/`).
 
 ```
-yuc-shop-features.php      # header, WooCommerce check, loads includes/*.php
+yuc-shop-features.php        # header, WooCommerce check, loads includes/*.php
 includes/
-├── product-page.php       # release date, CF7 when out of stock
-├── audio-player.php       # shortcode [yuc_player], enqueue only on is_product()
-├── checkout-phone.php     # phone required per zone
-└── free-shipping-notice.php
+├── release-date.php
+├── checkout-phone.php
+├── free-shipping-notice.php
+├── audio-player.php
+└── out-of-stock-contact.php
 templates/
-└── release-player.php     # from content-release.php (is_product() branch only)
+└── release-player.php
 assets/
 ├── audio-player.js / .css
 └── checkout-phone.js / .css
@@ -38,11 +101,9 @@ assets/
 
 Procedural, prefix `yuc_`, no classes, no jQuery.
 
----
+## Notes
 
-## 3. Notes
-
-- **Position of the summary hooks:** in the block template WC fires `woocommerce_single_product_summary` once, directly **before** the short description block (`core/post-excerpt`) [Code]. Release date and contact form appear there. The block must stay in the template. If the position is a problem, build both as shortcodes too.
-- **OG data:** done, nothing to rebuild. AIOSEO outputs `og:*`, WooCommerce outputs Schema.org Product/AggregateOffer as JSON-LD (checked live). Optionally set `og:type` to "product" in AIOSEO.
-- **Logo:** the Site Logo block still points to `wp-content/themes/youngandcold/assets/images/young_and_cold_web.png` (checked live). Upload to the media library and reassign before deleting the child theme.
-- **Germanized legal notices** on the product page: check for duplicates or missing output; use the Germanized product blocks if needed.
+- `woocommerce_single_product_summary` fires once in the block template, directly before the short description block (`core/post-excerpt`) [Code]. The block must stay in the template.
+- OG data: nothing to rebuild. AIOSEO outputs `og:*`, WooCommerce outputs Schema.org Product/AggregateOffer (checked live).
+- Logo: the Site Logo block still points to `wp-content/themes/youngandcold/assets/images/young_and_cold_web.png` (checked live). Upload to the media library and reassign before deleting the child theme.
+- Germanized legal notices on the product page: check for duplicates or missing output after each deployment.
