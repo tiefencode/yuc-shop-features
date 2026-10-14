@@ -8,28 +8,42 @@
 }
 
 .yuc-free-shipping__bar {
-	height: 12px;
-	border-radius: 6px;
+	height: 1.5rem;
+	margin-right: 1rem;
+	border-radius: .75rem;
 	background: color-mix(in srgb, currentColor 15%, transparent);
-	overflow: hidden;
 }
 
 .yuc-free-shipping__fill {
+	position: relative;
 	height: 100%;
-	border-radius: 6px;
+	border-radius: .75rem;
 	background-color: #0f834d;
 	background-image: repeating-linear-gradient(
 		-45deg,
-		rgba(255, 255, 255, .25) 0 10px,
-		transparent 10px 20px
+		rgba(255, 255, 255, .25) 0 .625rem,
+		transparent .625rem 1.25rem
 	);
-	background-size: 28.28px 100%;
+	background-size: 1.7678rem 100%;
 	animation: yuc-free-shipping-stripes 2s linear infinite;
+}
+
+.yuc-free-shipping__icon {
+	position: absolute;
+	top: 50%;
+	right: 0;
+	width: 2rem;
+	height: 2rem;
+	padding: .375rem;
+	transform: translate(50%, -50%);
+	border-radius: 50%;
+	background: #0f834d;
+	color: #fff;
 }
 
 @keyframes yuc-free-shipping-stripes {
 	to {
-		background-position: 28.28px 0;
+		background-position: 1.7678rem 0;
 	}
 }
 

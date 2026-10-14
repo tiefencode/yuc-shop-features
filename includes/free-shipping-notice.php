@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-add_action( 'woocommerce_before_cart_totals', 'yuc_free_shipping_notice' );
+add_action( 'woocommerce_before_cart_table', 'yuc_free_shipping_notice' );
 add_action( 'woocommerce_checkout_before_order_review', 'yuc_free_shipping_notice' );
 
 function yuc_free_shipping_notice(): void {
@@ -19,10 +19,14 @@ function yuc_free_shipping_notice(): void {
 		? sprintf( 'Noch %s bis zum kostenlosen Versand', wc_price( $remaining ) )
 		: 'Versandkostenfrei!';
 
+	// Truck icon: Feather Icons, MIT.
+	$icon = '<svg class="yuc-free-shipping__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+
 	printf(
-		'<div class="yuc-free-shipping"><p class="yuc-free-shipping__text">%s</p><div class="yuc-free-shipping__bar" aria-hidden="true"><div class="yuc-free-shipping__fill" style="width: %s%%"></div></div></div>',
+		'<div class="yuc-free-shipping"><p class="yuc-free-shipping__text">%s</p><div class="yuc-free-shipping__bar" aria-hidden="true"><div class="yuc-free-shipping__fill" style="width: %s%%">%s</div></div></div>',
 		wp_kses_post( $text ),
-		esc_attr( min( 100, round( $subtotal / $min_amount * 100, 1 ) ) )
+		esc_attr( min( 100, round( $subtotal / $min_amount * 100, 1 ) ) ),
+		$icon
 	);
 }
 
