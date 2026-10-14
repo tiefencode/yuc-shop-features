@@ -23,7 +23,6 @@ function yuc_player_shortcode(): string {
 			return '';
 		}
 
-		yuc_player_enqueue_assets();
 		ob_start();
 		include YUC_SHOP_FEATURES_DIR . 'templates/release-player.php';
 		return ob_get_clean();
@@ -48,15 +47,19 @@ function yuc_player_shortcode(): string {
 		return '';
 	}
 
-	yuc_player_enqueue_assets();
-
 	return '<div class="external-player">'
 		. '<button type="button" class="external-player-trigger">&#9654; Listen to ' . esc_html( get_the_title() ) . '</button>'
 		. '<template>' . $embed . '</template>'
 		. '</div>';
 }
 
+add_action( 'wp_enqueue_scripts', 'yuc_player_enqueue_assets' );
+
 function yuc_player_enqueue_assets(): void {
+	if ( ! is_product() ) {
+		return;
+	}
+
 	wp_enqueue_style( 'yuc-audio-player', YUC_SHOP_FEATURES_URL . 'assets/audio-player.css', [], YUC_SHOP_FEATURES_VERSION );
 	wp_enqueue_script( 'yuc-audio-player', YUC_SHOP_FEATURES_URL . 'assets/audio-player.js', [], YUC_SHOP_FEATURES_VERSION, true );
 }
