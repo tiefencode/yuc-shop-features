@@ -1,0 +1,6 @@
+.DS_Store
+.idea/
+.vscode/
+*.log
+*.zip
+.claude/settings.local.json
