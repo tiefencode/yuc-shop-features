@@ -26,7 +26,8 @@ Shows a notice box "Releasetermin / Release date: {date}" on the product page wh
 
 - Hook `woocommerce_single_product_summary`, priority 25. In the block template this renders directly before the short description [Code].
 - Read with `get_post_meta( $product_id, 'release_date', true )`.
-- **New:** hide the box automatically once the release date has passed. Parse the stored value with `DateTimeImmutable`; show only while the date is today or in the future (site timezone, `wp_timezone()`). If the value cannot be parsed, show it as before so existing data keeps working. The stored format is to be checked on a live product before implementing.
+- Stored format is `Y-m-d`, e.g. `2026-11-27`.
+- **New:** hide the box automatically once the release date has passed. Parse the stored value with `DateTimeImmutable` in the site timezone (`wp_timezone()`); show only while the date is today or in the future. If the value cannot be parsed, show it as before so existing data keeps working.
 - Output escaped with `esc_html`.
 
 ## 2. Phone required per shipping zone
@@ -59,7 +60,7 @@ Origin: `inc/yuc-template-functions.php:3-103`, `content-release.php:16-67`, `as
 Plays the release on the product page. Two variants, decided by Pods fields on the product:
 
 1. `release_listen` set → the linked `release` post provides `files` (MP3 attachments). Render an HTML5 `<audio>` element with a playlist, track title, previous/next controls.
-2. No release, but `bandcamp_album_id` or `soundcloud_id` set → a "▶ Listen to {title}" trigger; on click, replace it with the Bandcamp or SoundCloud iframe (`single_track` decides between track and album/playlist embed). The iframe is not loaded before the click.
+2. No release, but `bandcamp_album_id` (numeric, e.g. `1474487848`) or `soundcloud_id` set → a "▶ Listen to {title}" trigger; on click, replace it with the Bandcamp or SoundCloud iframe (`single_track` decides between track and album/playlist embed). The iframe is not loaded before the click.
 
 Implementation:
 
