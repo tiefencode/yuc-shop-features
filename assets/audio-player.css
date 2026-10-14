@@ -1,0 +1,68 @@
+/* External player (Bandcamp / SoundCloud) */
+
+.player-soundcloud {
+	margin-top: 1em;
+}
+
+.player-bandcamp {
+	position: relative;
+}
+
+.player-bandcamp::before {
+	position: absolute;
+	top: 0;
+	left: 0;
+	margin-top: -1px;
+	content: ' ';
+	display: block;
+	background: #110e0e;
+	width: 100%;
+	height: 50px;
+	border-bottom: 1px solid #4f4f4f;
+	z-index: 100;
+}
+
+.external-player-trigger {
+	width: 100%;
+	background: #333;
+	color: inherit;
+	font: inherit;
+	border: 0;
+	text-align: center;
+	cursor: pointer;
+	margin-top: 2.5rem;
+	padding: 1em 0;
+}
+
+/* Release player */
+
+.player-yuc {
+	margin-top: 1em;
+}
+
+.player-yuc-playlist {
+	display: none;
+}
+
+.player-yuc-tracktitle {
+	padding: 1ex 0;
+}
+
+.player-yuc-hud {
+	display: flex;
+	justify-content: space-around;
+}
+
+.player-yuc-controls {
+	text-align: center;
+}
+
+.player-yuc-controls button {
+	background: none;
+	border: 0;
+	color: inherit;
+	cursor: pointer;
+	font-size: 40px;
+	line-height: .7;
+	padding: 5px;
+}
