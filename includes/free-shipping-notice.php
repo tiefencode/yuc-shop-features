@@ -5,26 +5,48 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 add_action( 'woocommerce_before_cart_totals', 'yuc_free_shipping_notice' );
+add_action( 'woocommerce_checkout_before_order_review', 'yuc_free_shipping_notice' );
 
 function yuc_free_shipping_notice(): void {
+	$min_amount = yuc_free_shipping_min_amount();
+	if ( $min_amount <= 0 ) {
+		return;
+	}
+
+	$subtotal  = WC()->cart->get_displayed_subtotal();
+	$remaining = $min_amount - $subtotal;
+	$text      = $remaining > 0
+		? sprintf( 'Noch %s bis zum kostenlosen Versand', wc_price( $remaining ) )
+		: 'Versandkostenfrei!';
+
+	printf(
+		'<div class="yuc-free-shipping"><p class="yuc-free-shipping__text">%s</p><div class="yuc-free-shipping__bar" aria-hidden="true"><div class="yuc-free-shipping__fill" style="width: %s%%"></div></div></div>',
+		wp_kses_post( $text ),
+		esc_attr( min( 100, round( $subtotal / $min_amount * 100, 1 ) ) )
+	);
+}
+
+function yuc_free_shipping_min_amount(): float {
 	$packages = WC()->cart->get_shipping_packages();
 	if ( ! $packages ) {
-		return;
+		return 0;
 	}
 
 	$zone = WC_Shipping_Zones::get_zone_matching_package( reset( $packages ) );
 
 	foreach ( $zone->get_shipping_methods( true ) as $method ) {
-		if ( 'free_shipping' !== $method->id || ! in_array( $method->requires, [ 'min_amount', 'either' ], true ) ) {
-			continue;
+		if ( 'free_shipping' === $method->id && in_array( $method->requires, [ 'min_amount', 'either' ], true ) ) {
+			return (float) $method->min_amount;
 		}
+	}
 
-		$remaining = (float) $method->min_amount - WC()->cart->get_displayed_subtotal();
-		$text      = $remaining > 0
-			? sprintf( 'Noch %s bis zum kostenlosen Versand', wc_price( $remaining ) )
-			: 'Versandkostenfrei!';
+	return 0;
+}
 
-		wc_print_notice( $text, 'notice' );
-		return;
+add_action( 'wp_enqueue_scripts', 'yuc_free_shipping_enqueue_style' );
+
+function yuc_free_shipping_enqueue_style(): void {
+	if ( is_cart() || is_checkout() ) {
+		wp_enqueue_style( 'yuc-free-shipping', YUC_SHOP_FEATURES_URL . 'assets/free-shipping-notice.css', [], YUC_SHOP_FEATURES_VERSION );
 	}
 }

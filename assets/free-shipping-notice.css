@@ -1,0 +1,40 @@
+.yuc-free-shipping {
+	margin-bottom: 1.5em;
+}
+
+.yuc-free-shipping__text {
+	margin: 0 0 .5em;
+	font-weight: 700;
+}
+
+.yuc-free-shipping__bar {
+	height: 12px;
+	border-radius: 6px;
+	background: color-mix(in srgb, currentColor 15%, transparent);
+	overflow: hidden;
+}
+
+.yuc-free-shipping__fill {
+	height: 100%;
+	border-radius: 6px;
+	background-color: #0f834d;
+	background-image: repeating-linear-gradient(
+		-45deg,
+		rgba(255, 255, 255, .25) 0 10px,
+		transparent 10px 20px
+	);
+	background-size: 28.28px 100%;
+	animation: yuc-free-shipping-stripes 2s linear infinite;
+}
+
+@keyframes yuc-free-shipping-stripes {
+	to {
+		background-position: 28.28px 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.yuc-free-shipping__fill {
+		animation: none;
+	}
+}
