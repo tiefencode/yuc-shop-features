@@ -4,6 +4,8 @@ Status 2026-10-15: the theme switch to Twenty Twenty-Five is done. Cart and chec
 
 Paths like `functions.php:221` refer to the old child theme `youngandcold/` (outside this repo). **[Code]** = verified in the WooCommerce 11.2.1 source.
 
+The old code defines the behaviour to keep, not how to build it. Replace its workarounds with the straightforward approach; "better" means simpler, not more. The implementation notes below are a starting point, not a constraint.
+
 ## Features
 
 | Prio | Feature | Value |
@@ -36,8 +38,7 @@ The billing phone becomes required when the chosen shipping method belongs to sh
 - Resolve the rate IDs (`method_id:instance_id`) of all enabled methods in those zones via `WC_Shipping_Zones::get_zone()`; compare with `WC()->session->get( 'chosen_shipping_methods' )`.
 - `woocommerce_checkout_fields` (priority 20): set `billing_phone['required']` accordingly, so the server renders the field as required when the method is already chosen.
 - `woocommerce_after_checkout_validation`: add an error if the phone is empty while required. This is the actual enforcement.
-- JS (`assets/checkout-phone.js`, plain JavaScript, loaded only on the checkout page): keep the field's `required` state and label in sync when the customer changes the shipping method. Listen with a delegated `change` listener on `input[name^="shipping_method"]` and a `MutationObserver` on `#order_review`, because WooCommerce's `updated_checkout` is a jQuery-only event. Toggle the class `is-phone-required` on `#billing_phone_field`.
-- CSS (`assets/checkout-phone.css`): hide the "(optional)" label text and WooCommerce's asterisk on the phone field; render an own asterisk via `.is-phone-required label::after`.
+- JS (`assets/checkout-phone.js`, plain JavaScript, loaded only on the checkout page): keep the field in sync when the customer changes the shipping method. Listen with a delegated `change` listener on `input[name^="shipping_method"]` and a `MutationObserver` on `#order_review`, because WooCommerce's `updated_checkout` is a jQuery-only event. Set `required`/`aria-required` on the input and **swap the label marker WooCommerce rendered**: `<span class="optional">(optional)</span>` ↔ `<span class="required">*</span>`. This reuses WooCommerce's own markup and styles, so no CSS file is needed. (The old code hid both markers and drew its own asterisk via CSS; that also hid "(optional)" on every checkout field.)
 - Requires the shortcode checkout; the Checkout block does not apply these hooks [Code].
 
 ## 3. Free shipping notice
@@ -96,7 +97,7 @@ templates/
 └── release-player.php
 assets/
 ├── audio-player.js / .css
-└── checkout-phone.js / .css
+└── checkout-phone.js
 ```
 
 Procedural, prefix `yuc_`, no classes, no jQuery.

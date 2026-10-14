@@ -10,6 +10,7 @@ WooCommerce plugin for youngandcold.de. Repository root = plugin directory. What
 
 ## Conventions
 
+- The old theme code is the reference for *behaviour*, not for *implementation*. It is often sloppy; do not copy its workarounds. "Better" means fewer moving parts and current WordPress/WooCommerce APIs, never more code, options, or structure. A feature that is already a few plain lines stays a few plain lines.
 - Procedural PHP, prefix `yuc_`, no classes, no abstractions beyond what the spec lists.
 - One file per feature in `includes/`; the bootstrap loads `includes/*.php` automatically.
 - Plain JavaScript only, no jQuery. Enqueue assets only on the pages that need them.
