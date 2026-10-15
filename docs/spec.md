@@ -16,6 +16,8 @@ The old code defines the behaviour to keep, not how to build it. Replace its wor
 | Medium | Audio player | Customers can listen to the release on the product page |
 | Low | Contact form when out of stock | Customers can ask about sold-out items instead of leaving |
 | Medium | Details button in product listings | Listings link to the product page instead of adding to the cart, with the native block styling intact |
+| Low | Eager first listing image | The first product image on the front page and the shop page is the Largest Contentful Paint element; loading it eagerly with high priority cuts LCP |
+| Very low | Bundle blocks script only on cart/checkout | WPC Product Bundles pulls the whole Cart/Checkout React bundle (~600 KB) onto every page; it is only useful on cart and checkout |
 
 ---
 
@@ -109,6 +111,32 @@ Product buttons in product listings link to the product page and read "Details";
 
 Test on live: in a Product Collection, every button reads "Details", links to the product page and keeps the width, alignment and style set in the Site Editor; clicking adds nothing to the cart. The product page still adds to the cart.
 
+## 7. Eager first listing image
+
+Origin: Lighthouse analysis 2026-10-15 (`/Users/moswald/Projekte/youngandcold-wp/lighthouse-2026-10-15/README.md`, outside this repo). On the front page and the shop page the LCP element is the first image of the first Product Collection. WooCommerce renders every Product Image block with `loading="lazy"` and no `fetchpriority`, so the browser requests it late; with a warm page cache this was the largest remaining share of LCP (3.5 s at 80 ms TTFB).
+
+The first product image on the front page and on the shop page is rendered with `loading="eager"` and `fetchpriority="high"`. All other listing images stay lazy.
+
+- `ProductImage::render_image()` decides the `loading` attribute through `woocommerce_product_image_loading_attr` (default `'lazy'`, second argument the image ID) and passes it to `wp_get_attachment_image()` [Code].
+- Filter returns `'eager'` for the first call on `is_front_page()` or `is_shop()` (static flag), the default otherwise.
+- `fetchpriority="high"` is not set by the plugin. Core's `wp_get_loading_optimization_attributes()` treats a provided non-lazy `loading` value as "in viewport" and adds `fetchpriority="high"` to the first such image of at least 50 000 px² while `wp_high_priority_element_flag()` is still set [Code, WordPress `media.php`]. The site logo (100 × 100) is below that size and leaves the flag set.
+- Only the first image gets priority; the rest of the first row stays lazy because browsers fetch in-viewport lazy images at layout time anyway and only one element should carry `fetchpriority="high"`.
+
+Test on live: view-source of `/` and `/shop/`: the first `img` inside `li.wc-block-product` has `loading="eager" fetchpriority="high"`, the next ones `loading="lazy"`; a product page keeps `loading="lazy"` on its related-products images.
+
+## 8. Bundle blocks script only on cart/checkout
+
+Origin: Lighthouse analysis 2026-10-15. `wp-components` (265 KB, 199 KB unused), `blocks-checkout`, `blocks-components`, `wc-cart-checkout-base/vendors`, React, `wp-data`, `moment`, `wp-rich-text` and more loaded on every page, roughly 600 KB of JavaScript.
+
+The script `woosb-blocks` of WPC Product Bundles is dequeued on every page except cart and checkout, which takes its dependency chain with it.
+
+- WPC registers an `IntegrationInterface` for the Mini-Cart, Cart and Checkout blocks (`includes/class-blocks.php`, WPC Product Bundles 8.7.5). `initialize()` registers `woosb-blocks` with the dependency `wc-blocks-checkout`, in the footer. The Mini-Cart block enqueues all integration script handles inside `render()` [Code, `MiniCart.php` 11.2.1], so the script is enqueued during body rendering on every page with the header Mini-Cart.
+- The script only registers checkout filters (`cartItemClass`, `cartItemPrice`, `subtotalPriceFormat`, `itemName`, `showRemoveItemLink`) for the React Cart/Checkout components. Cart and checkout run as shortcodes, and the Mini-Cart drawer is the Interactivity API version, which does not use those filters. The script has no effect on this site; it is still left in place on cart and checkout in case either is switched to the block.
+- `wp_print_footer_scripts`, priority 1 (before `_wp_footer_scripts` prints at 10 [Code]): `wp_dequeue_script( 'woosb-blocks' )` unless `is_cart()` or `is_checkout()`. Dependencies that nothing else needs are not printed. `gtm4wp-woocommerce-blocks` keeps `wp-data` and its chain on the page; that is GTM4WP's own dependency and out of scope.
+- The 496-byte stylesheet `woosb-blocks` stays enqueued.
+
+Test on live: view-source of `/`: no `components.min.js`, no `wc-cart-checkout-base-frontend.js`, no `blocks-checkout.js`; Mini-Cart drawer opens and adding a product works; cart and checkout pages still load `woosb-blocks`.
+
 ---
 
 ## Structure
@@ -123,7 +151,9 @@ includes/
 ├── free-shipping-notice.php
 ├── audio-player.php
 ├── out-of-stock-contact.php
-└── listing-details-button.php
+├── listing-details-button.php
+├── listing-first-image.php
+└── bundle-blocks-script.php
 templates/
 └── release-player.php
 assets/
