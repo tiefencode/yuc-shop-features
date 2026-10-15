@@ -13,7 +13,8 @@ function yuc_release_date_shortcode(): string {
 	}
 
 	$timezone = wp_timezone();
-	$date     = DateTimeImmutable::createFromFormat( '!Y-m-d', $release_date, $timezone );
+	$date     = DateTimeImmutable::createFromFormat( '!Y-m-d', $release_date, $timezone )
+		?: DateTimeImmutable::createFromFormat( '!d.m.Y', $release_date, $timezone );
 	if ( $date && $date < new DateTimeImmutable( 'today', $timezone ) ) {
 		return '';
 	}
