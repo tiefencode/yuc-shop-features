@@ -9,13 +9,13 @@
 
 .yuc-free-shipping__bar {
 	height: 1.5rem;
-	margin-right: 1rem;
 	border-radius: .75rem;
 	background: color-mix(in srgb, currentColor 15%, transparent);
 }
 
 .yuc-free-shipping__fill {
 	position: relative;
+	min-width: 2rem;
 	height: 100%;
 	border-radius: .75rem;
 	background-color: #0f834d;
@@ -35,7 +35,7 @@
 	width: 2rem;
 	height: 2rem;
 	padding: .375rem;
-	transform: translate(50%, -50%);
+	transform: translateY(-50%);
 	border-radius: 50%;
 	background: #0f834d;
 	color: #fff;
