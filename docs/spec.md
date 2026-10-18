@@ -1,143 +1,47 @@
-# Spec: porting features from the Storefront child theme
+# yuc-shop-features – spec
 
-Status 2026-10-15: the theme switch to Twenty Twenty-Five is done. Cart and checkout run as shortcodes (`[woocommerce_cart]`, `[woocommerce_checkout]`). Free shipping is configured as a "Free shipping" method with a minimum order amount.
+One file per feature in `docs/features/`. This file is the index plus the rules that apply to every feature.
 
-Paths like `functions.php:221` refer to the old child theme `youngandcold/` (outside this repo). **[Code]** = verified in the WooCommerce 11.2.1 source.
-
-The old code defines the behaviour to keep, not how to build it. Replace its workarounds with the straightforward approach; "better" means simpler, not more. The implementation notes below are a starting point, not a constraint.
+Site facts (2026-10-18): Twenty Twenty-Five block theme, WooCommerce 11.2.1. Cart and checkout run as shortcodes (`[woocommerce_cart]`, `[woocommerce_checkout]`). Free shipping is a "Free shipping" method with a minimum order amount. Staging: `https://staging.youngandcold.de` (basic auth).
 
 ## Features
 
-| Prio | Feature | Value |
-|---|---|---|
-| High | Release date | Customers see when a pre-order ships |
-| Medium | Phone required per shipping zone | Carriers outside the EU need a phone number; orders without one get stuck |
-| Medium | Free shipping notice | Nudges customers towards the free shipping threshold |
-| Medium | Audio player | Customers can listen to the release on the product page |
-| Low | Contact form when out of stock | Customers can ask about sold-out items instead of leaving |
-| Medium | Details button in product listings | Listings link to the product page instead of adding to the cart, with the native block styling intact |
-| Low | Eager first listing image | The first product image on the front page and the shop page is the Largest Contentful Paint element; loading it eagerly with high priority cuts LCP |
-| Very low | Bundle blocks script only on cart/checkout | WPC Product Bundles pulls the whole Cart/Checkout React bundle (~600 KB) onto every page; it is only useful on cart and checkout |
+| # | Prio | Feature | Status |
+|---|---|---|---|
+| 1 | high | [Release date](features/01-release-date.md) | live |
+| 2 | medium | [Phone required per shipping zone](features/02-checkout-phone.md) | live |
+| 3 | medium | [Free shipping notice](features/03-free-shipping-notice.md) | live |
+| 4 | medium | [Audio player](features/04-audio-player.md) | live |
+| 5 | low | [Contact form when out of stock](features/05-out-of-stock-contact.md) | live |
+| 6 | medium | [Details button in product listings](features/06-listing-details-button.md) | live |
+| 7 | low | [Eager first listing image](features/07-listing-first-image.md) | live |
+| 8 | very low | [Bundle blocks script only on cart/checkout](features/08-bundle-blocks-script.md) | live |
 
----
+Status values: `planned` (spec written, no code) → `staging` (on a feature branch, deployed to staging) → `live` (merged to `main`, deployed to production).
 
-## 1. Release date
+## Writing a feature
 
-Origin: `functions.php:221-232`.
+Create `docs/features/NN-<slug>.md` with:
 
-Shows a notice box "Releasetermin / Release date: {date}" on the product page when the product meta `release_date` is set.
+```
+# <Feature name>
 
-- Shortcode `[yuc_release_date]`, placed in the Single Product template in the Site Editor. The old hook `woocommerce_single_product_summary` fires only once in the block template, directly before the short description [Code], which is too far down; the shortcode can be placed anywhere, e.g. below title or price.
-- Read with `get_post_meta( get_the_ID(), 'release_date', true )`.
-- Stored format is `Y-m-d`, empty fields `0000-00-00`. `get_post_meta()` returns the Pods display value instead: `d.m.Y` (e.g. `15.03.2021`), empty string for `0000-00-00` (checked live). Parse `Y-m-d` first, then `d.m.Y`.
-- **New:** hide the box automatically once the release date has passed. Parse the stored value with `DateTimeImmutable` in the site timezone (`wp_timezone()`); show only while the date is today or in the future. If the value cannot be parsed, show it as before so existing data keeps working.
-- Output via `wc_print_notice( $text, 'notice', [], true )` (returned, not echoed), date escaped with `esc_html`.
+Status: planned · Prio: <high|medium|low> · Code: <files, once known>
 
-Test on live: a product with a future `release_date` shows the box at the position of the shortcode block; one with a past date does not; one without the meta does not.
+**Value:** <one sentence: why this exists, from the customer's or shop's view>
 
-## 2. Phone required per shipping zone
+<Origin, if ported or triggered by an analysis.>
 
-Origin: `functions.php:237-370` plus three rules from the old Customizer CSS.
+<What the feature does, in behaviour terms.>
 
-The billing phone becomes required when the chosen shipping method belongs to shipping zone 0 ("Rest of the world") or 3 ("Amerika").
+## Implementation
+<Hooks, APIs, markup, decisions. Mark source-verified claims with [Code].>
 
-- Resolve the rate IDs (`method_id:instance_id`) of all enabled methods in those zones via `WC_Shipping_Zones::get_zone()`; compare with `WC()->session->get( 'chosen_shipping_methods' )`.
-- `woocommerce_checkout_fields` (priority 20): set `billing_phone['required']` accordingly, so the server renders the field as required when the method is already chosen.
-- `woocommerce_after_checkout_validation`: add an error if the phone is empty while required. This is the actual enforcement. When the session already had the method, WooCommerce adds its own generic `billing_phone_required` error from the field flag; the handler removes it and adds the German message with the same code, so only one message appears.
-- JS (`assets/checkout-phone.js`, plain JavaScript, loaded only on the checkout page): keep the field in sync when the customer changes the shipping method. Listen with a delegated `change` listener on `input[name^="shipping_method"]` and a `MutationObserver` on `#order_review`, because WooCommerce's `updated_checkout` is a jQuery-only event. Set `required`/`aria-required` on the input, toggle `validate-required` on the `.form-row` (WooCommerce's own inline validation reads it) and **swap the label marker WooCommerce rendered**: `<span class="optional">(optional)</span>` ↔ `<span class="required" aria-hidden="true">*</span>` [Code]. This reuses WooCommerce's own markup and styles, so no CSS file is needed. (The old code hid both markers and drew its own asterisk via CSS; that also hid "(optional)" on every checkout field.) The rate IDs reach the script via `wp_add_inline_script()`.
-- Requires the shortcode checkout; the Checkout block does not apply these hooks [Code].
+## Test on staging
+<Cases that prove the behaviour; the staging-check agent runs the ones visible in page source.>
+```
 
-Test on live: with a German address the phone field stays optional and an order without phone goes through (use a test payment method or stop before paying). Switch the country to USA: the label changes to `*` without reload; submitting without phone shows the error; with phone the order validates. Switch back: label returns to "(optional)".
-
-## 3. Free shipping notice
-
-Origin: a CSS `content` rule attached to `flat_rate:2` (`style.css:518-528`). Replaced by a text line plus an animated progress bar.
-
-Shows on the cart and checkout page: "Noch {amount} bis zum kostenlosen Versand" while below the threshold, "Versandkostenfrei!" once reached, with a bar whose green fill is the cart subtotal as a share of the threshold (capped at 100 %).
-
-- Hooks `woocommerce_before_cart_table` (cart, inside the cart form directly above the product table) and `woocommerce_checkout_before_order_review` (checkout, between the "Your order" heading and the order table). The cart form is re-rendered on AJAX quantity updates, so the bar follows [Code]; `woocommerce_before_cart` would sit higher but outside the form and go stale. The checkout position is not re-rendered on address changes.
-- Read the threshold from the shipping settings instead of hard-coding it: zone for the current customer via `WC_Shipping_Zones::get_zone_matching_package()`, then the enabled `free_shipping` method whose `requires` is `min_amount` or `either`, and its `min_amount`. Nothing is shown if the zone has no such method or the amount is 0 (coupon-based free shipping is out of scope).
-- Compare with `WC()->cart->get_displayed_subtotal()`.
-- Markup: `div.yuc-free-shipping` with `p.yuc-free-shipping__text` and `div.yuc-free-shipping__bar > div.yuc-free-shipping__fill` (inline `width` in percent, bar is `aria-hidden`); amount formatted with `wc_price()`. No WooCommerce notice box. Inside the fill an inline truck SVG (Feather Icons, MIT) rides on its right end.
-- `assets/free-shipping-notice.css`, enqueued on cart and checkout: 1.5 rem bar, fill in `#0f834d` (the old free shipping green) with diagonal stripes moved by a `background-position` animation (barber pole, 2 s per period), disabled under `prefers-reduced-motion`. Track colour from `color-mix()` with `currentColor` so it works on light and dark backgrounds. The truck is a green circle flush with the fill's end; the fill has a min-width of one circle so the truck is not cut off at small shares, and it reaches the right edge once the threshold is met.
-- The Mini-Cart block renders its drawer client-side from the Store API; PHP hooks do not reach it, so it shows no bar.
-
-Test on live: cart below the threshold shows the remaining amount and a partly filled bar; adding items past the threshold shows "Versandkostenfrei!" and a full bar; the checkout shows the same; a shipping address in a zone without a free shipping method shows nothing.
-
-## 4. Audio player
-
-Origin: `inc/yuc-template-functions.php:3-103`, `content-release.php:16-67`, `assets/javascript/audio-player.js`, `style.css:248-310`.
-
-Plays the release on the product page. Two variants, decided by Pods fields on the product:
-
-1. `release_listen` set → the linked `release` post provides `files` (MP3 attachments). Render an HTML5 `<audio>` element with a playlist, track title, previous/next controls.
-2. No release, but `bandcamp_album_id` (numeric, e.g. `1474487848`) or `soundcloud_id` set → a "▶ Listen to {title}" trigger; on click, replace it with the Bandcamp or SoundCloud iframe (`single_track` decides between track and album/playlist embed). The iframe is not loaded before the click.
-
-Implementation:
-
-- Shortcode `[yuc_player]`, placed in the Single Product template in the Site Editor. Unlike the old hook `woocommerce_after_add_to_cart_button`, this also renders for out-of-stock products (WooCommerce renders no add-to-cart form there [Code]).
-- Template `templates/release-player.php` for the playlist markup; iframe markup inline in the shortcode callback.
-- `assets/audio-player.js` in plain JavaScript, scoped to the player container (not every `<audio>` on the page). Fix the old off-by-one: the last track was skipped on auto-advance (`audio-player.js:42-51`); after the last track the playlist starts over. Assets enqueued on `wp_enqueue_scripts` for `is_product()`: enqueuing from the shortcode callback printed the CSS in the footer and the hidden playlist flashed on load.
-- `assets/audio-player.css` from `style.css:248-310`; trigger and previous/next are `<button>` elements with a minimal reset.
-- The external embed sits in a `<template>` next to the trigger button and is moved into the DOM on click.
-- Pods access via `pods( 'product', $id )->field( … )`; the release's `files` field returns attachment arrays (`ID`, `post_title`). File URLs via `wp_get_attachment_url( $file['ID'] )`, not the stored `guid`, so they follow the site URL. Without Pods the shortcode renders nothing.
-
-Test on live: a product with a release plays tracks, previous/next and auto-advance reach the last track; a product with only a Bandcamp ID shows the trigger and loads the iframe on click, no iframe request before; a product with neither renders nothing; an out-of-stock product still shows the player.
-
-## 5. Contact form when out of stock
-
-Origin: `functions.php:112-121`.
-
-Shows Contact Form 7 form 4669 on the product page when the product is not in stock.
-
-- Hook `woocommerce_single_product_summary`, priority 30.
-- `if ( ! $product->is_in_stock() ) echo do_shortcode( '[contact-form-7 id="4669"]' );`
-- Port as is; no change in behaviour.
-
-Test on live: an out-of-stock product shows the form; an in-stock product does not.
-
-## 6. Details button in product listings
-
-Origin: the Germanized option "Link to product details page instead of add to cart within listings". Germanized implements it by replacing the whole Product Button block output on `woocommerce_loop_add_to_cart_link` with a bare `<a class="button">` (`wc-gzd-template-functions.php:991-1009`, Germanized 4.1.5). The block wrapper with width, alignment and inline styles from the Site Editor is lost. The option stays off.
-
-Product buttons in product listings link to the product page and read "Details"; nothing is added to the cart from a listing. The block markup stays untouched.
-
-- `ProductButton::render()` decides between an AJAX `<button>` and a plain `<a href>` from `$product->supports( 'ajax_add_to_cart' )`, and takes target and label from `add_to_cart_url()`, `add_to_cart_text()` and `add_to_cart_description()` [Code]. All four are filterable per product; wrapper, classes and styles are built from the block attributes independently.
-- `woocommerce_product_supports`: `false` for `ajax_add_to_cart`. The block then renders the same `<a>` it already renders for variable products.
-- `woocommerce_product_add_to_cart_url`: permalink. Target equals permalink, so the block sets no `rel="nofollow"`.
-- `woocommerce_product_add_to_cart_text`: "Details". `woocommerce_product_add_to_cart_description`: "Details zu „{name}“" for the `aria-label`.
-- The single product page is not affected: its button is a form submit and uses `single_add_to_cart_text()`; the four methods are only called in listing, grid and API contexts [Code]. Exception: the external-product button on the single page also uses `add_to_cart_url()`; the shop has no external products.
-- Germanized "Show add to cart button on listings" must stay on. When it is off (and the link option is off), Germanized returns `false` on `woocommerce_loop_add_to_cart_link` and the block renders nothing (`wc-gzd-template-hooks.php:131-134`). Both Germanized options keep their effect on purpose; this feature only changes what the block renders when Germanized leaves it alone.
-
-Test on live: in a Product Collection, every button reads "Details", links to the product page and keeps the width, alignment and style set in the Site Editor; clicking adds nothing to the cart. The product page still adds to the cart.
-
-## 7. Eager first listing image
-
-Origin: Lighthouse analysis 2026-10-15 (`/Users/moswald/Projekte/youngandcold-wp/lighthouse-2026-10-15/README.md`, outside this repo). On the front page and the shop page the LCP element is the first image of the first Product Collection. WooCommerce renders every Product Image block with `loading="lazy"` and no `fetchpriority`, so the browser requests it late; with a warm page cache this was the largest remaining share of LCP (3.5 s at 80 ms TTFB).
-
-The first product image on the front page and on the shop page is rendered with `loading="eager"` and `fetchpriority="high"`. All other listing images stay lazy.
-
-- `ProductImage::render_image()` decides the `loading` attribute through `woocommerce_product_image_loading_attr` (default `'lazy'`, second argument the image ID) and passes it to `wp_get_attachment_image()` [Code].
-- Filter returns `'eager'` for the first call on `is_front_page()` or `is_shop()` (static flag), the default otherwise.
-- `fetchpriority="high"` is not set by the plugin. Core's `wp_get_loading_optimization_attributes()` treats a provided non-lazy `loading` value as "in viewport" and adds `fetchpriority="high"` to the first such image of at least 50 000 px² while `wp_high_priority_element_flag()` is still set [Code, WordPress `media.php`]. The site logo (100 × 100) is below that size and leaves the flag set.
-- Only the first image gets priority; the rest of the first row stays lazy because browsers fetch in-viewport lazy images at layout time anyway and only one element should carry `fetchpriority="high"`.
-
-Test on live: view-source of `/` and `/shop/`: the first `img` inside `li.wc-block-product` has `loading="eager" fetchpriority="high"`, the next ones `loading="lazy"`; a product page keeps `loading="lazy"` on its related-products images.
-
-## 8. Bundle blocks script only on cart/checkout
-
-Origin: Lighthouse analysis 2026-10-15. `wp-components` (265 KB, 199 KB unused), `blocks-checkout`, `blocks-components`, `wc-cart-checkout-base/vendors`, React, `wp-data`, `moment`, `wp-rich-text` and more loaded on every page, roughly 600 KB of JavaScript.
-
-The script `woosb-blocks` of WPC Product Bundles is dequeued on every page except cart and checkout, which takes its dependency chain with it.
-
-- WPC registers an `IntegrationInterface` for the Mini-Cart, Cart and Checkout blocks (`includes/class-blocks.php`, WPC Product Bundles 8.7.5). `initialize()` registers `woosb-blocks` with the dependency `wc-blocks-checkout`, in the footer. The Mini-Cart block enqueues all integration script handles inside `render()` [Code, `MiniCart.php` 11.2.1], so the script is enqueued during body rendering on every page with the header Mini-Cart.
-- The script only registers checkout filters (`cartItemClass`, `cartItemPrice`, `subtotalPriceFormat`, `itemName`, `showRemoveItemLink`) for the React Cart/Checkout components. Cart and checkout run as shortcodes, and the Mini-Cart drawer is the Interactivity API version, which does not use those filters. The script has no effect on this site; it is still left in place on cart and checkout in case either is switched to the block.
-- `wp_print_footer_scripts`, priority 1 (before `_wp_footer_scripts` prints at 10 [Code]): `wp_dequeue_script( 'woosb-blocks' )` unless `is_cart()` or `is_checkout()`. Dependencies that nothing else needs are not printed. `gtm4wp-woocommerce-blocks` keeps `wp-data` and its chain on the page; that is GTM4WP's own dependency and out of scope.
-- The 496-byte stylesheet `woosb-blocks` stays enqueued.
-
-Test on live: view-source of `/`: no `components.min.js`, no `wc-cart-checkout-base-frontend.js`, no `blocks-checkout.js`; Mini-Cart drawer opens and adding a product works; cart and checkout pages still load `woosb-blocks`.
-
----
+Keep it short. The old theme code, where it exists, defines the behaviour to keep, not how to build it; "better" means simpler, not more.
 
 ## Structure
 
@@ -145,28 +49,17 @@ The repository root is the plugin directory (`wp-content/plugins/yuc-shop-featur
 
 ```
 yuc-shop-features.php        # header, WooCommerce check, loads includes/*.php
-includes/
-├── release-date.php
-├── checkout-phone.php
-├── free-shipping-notice.php
-├── audio-player.php
-├── out-of-stock-contact.php
-├── listing-details-button.php
-├── listing-first-image.php
-└── bundle-blocks-script.php
-templates/
-└── release-player.php
-assets/
-├── audio-player.js / .css
-├── checkout-phone.js
-└── free-shipping-notice.css
+includes/<feature>.php       # one file per feature
+templates/                   # PHP templates rendered by the plugin
+assets/                      # plain JavaScript and CSS, no jQuery
+docs/spec.md, docs/features/
 ```
 
 Procedural, prefix `yuc_`, no classes, no jQuery.
 
 ## Notes
 
-- `woocommerce_single_product_summary` fires once in the block template, directly before the short description block (`core/post-excerpt`) [Code]. The block must stay in the template for the out-of-stock contact form (5).
+- `woocommerce_single_product_summary` fires once in the block template, directly before the short description block (`core/post-excerpt`) [Code]. The block must stay in the Single Product template (feature 5 depends on it).
 - Shortcode blocks for `[yuc_release_date]` (1) and `[yuc_player]` (4) must be placed in the Single Product template.
 - OG data: nothing to rebuild. AIOSEO outputs `og:*`, WooCommerce outputs Schema.org Product/AggregateOffer (checked live).
 - Logo: the Site Logo block still points to `wp-content/themes/youngandcold/assets/images/young_and_cold_web.png` (checked live). Upload to the media library and reassign before deleting the child theme.
