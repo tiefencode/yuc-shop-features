@@ -28,5 +28,6 @@ rsync -rlpt --delete "$@" \
 	./ "$HOST:$WP_DIR/wp-content/plugins/yuc-shop-features/"
 
 if [[ " $* " != *" --dry-run "* ]]; then
-	ssh "$HOST" "wp --path=$WP_DIR w3-total-cache flush all" | grep -v '^Deprecated\|^Notice' || true
+	# PHP deprecation notices from plugins flood WP-CLI output; keep only the result line.
+	ssh "$HOST" "wp --path=$WP_DIR w3-total-cache flush all 2>&1 | grep -E '^(Success|Error|Warning):'"
 fi
