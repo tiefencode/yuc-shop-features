@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
-# Deploys this plugin to the live server via rsync over SSH.
-# Usage: ./deploy.sh [--dry-run]
+# Deploys this plugin via rsync over SSH and flushes the W3 Total Cache.
+# Usage: ./deploy.sh staging|production [--dry-run] [-v]
 set -euo pipefail
 
 HOST="p266187@youngandcold.de"
-REMOTE_DIR="/home/www/p266187/html/wordpress/wp-content/plugins/yuc-shop-features/"
+
+case "${1:-}" in
+	staging)    WP_DIR="/home/www/p266187/html/wordpress-staging" ;;
+	production) WP_DIR="/home/www/p266187/html/wordpress" ;;
+	*) echo "Usage: $0 staging|production [--dry-run] [-v]" >&2; exit 1 ;;
+esac
+shift
 
 cd "$(dirname "$0")"
 
@@ -18,5 +24,10 @@ rsync -rlpt --delete "$@" \
 	--exclude CLAUDE.md \
 	--exclude README.md \
 	--exclude docs \
+	--exclude tests \
 	--exclude deploy.sh \
-	./ "$HOST:$REMOTE_DIR"
+	./ "$HOST:$WP_DIR/wp-content/plugins/yuc-shop-features/"
+
+if [[ " $* " != *" --dry-run "* ]]; then
+	ssh "$HOST" "wp --path=$WP_DIR w3-total-cache flush all" | grep -v '^Deprecated\|^Notice' || true
+fi

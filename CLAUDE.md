@@ -15,4 +15,5 @@ WooCommerce plugin for youngandcold.de. Repository root = plugin directory. What
 - One file per feature in `includes/`; the bootstrap loads `includes/*.php` automatically.
 - Plain JavaScript only, no jQuery. Enqueue assets only on the pages that need them.
 - Escape output (`esc_html`, `esc_attr`, `esc_url`, `wp_kses_post`).
-- Commits: Conventional Commits, English.
+- Commits: Conventional Commits, English. Before committing run `php -l` on every PHP file and `node --check` on every JS file, read `git diff --staged`, stage files explicitly (no `git add -A`), one logical change per commit, spec updated in the same commit when behaviour changes.
+- Deployment: `./deploy.sh staging|production` (rsync + W3 Total Cache flush), only when the developer asks. Staging is `https://staging.youngandcold.de` (basic auth, credentials from the developer). Test on staging first, production after the developer's go.

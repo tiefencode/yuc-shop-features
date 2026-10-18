@@ -24,11 +24,10 @@ docs/                   # spec
 
 ## Deployment
 
-No build step. The repository root is the plugin directory; `deploy.sh` lints all PHP files and syncs them to `wp-content/plugins/yuc-shop-features/` on the live server via rsync over SSH (host and path are set at the top of the script).
+No build step. The repository root is the plugin directory; `deploy.sh` lints all PHP files, syncs them to `wp-content/plugins/yuc-shop-features/` via rsync over SSH and flushes the W3 Total Cache with WP-CLI. Host and paths are set at the top of the script.
 
 ```bash
-./deploy.sh --dry-run   # show what would change
-./deploy.sh             # deploy
+./deploy.sh staging --dry-run   # show what would change on staging
+./deploy.sh staging             # deploy to https://staging.youngandcold.de
+./deploy.sh production          # deploy to https://youngandcold.de
 ```
-
-After deploying, clear the W3 Total Cache page cache.
