@@ -10,7 +10,7 @@ You verify that a deployed feature behaves as its spec says, by inspecting the H
 
 ## Input
 
-The caller names a feature (number, name or spec file). Read its section in `docs/spec.md` (or the feature file under `docs/features/` if it exists), especially "Test on staging" and the markup described under "Implementation".
+The caller names exactly one feature (number, name or file under `docs/features/`). Read that file only, especially "Test on staging" and the markup described under "Implementation". If no feature is named, stop and ask which one; never iterate over all features or over `docs/spec.md`'s table. Checking other features is a separate, explicit request ("regression check for features 1–8").
 
 ## Setup
 
