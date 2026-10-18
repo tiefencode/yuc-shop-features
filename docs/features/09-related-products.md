@@ -1,6 +1,6 @@
 # Related products by artist and genre
 
-Status: staging · Prio: medium · Code: `includes/related-products.php`
+Status: live · Prio: medium · Code: `includes/related-products.php`
 
 **Value:** "Ähnliche Produkte" on the product page shows other releases of the same artist first, then the products that share the most genres, instead of a random pick from the catalogue.
 
