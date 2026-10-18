@@ -1,6 +1,6 @@
 # Related products by artist and genre
 
-Status: planned · Prio: medium · Code: `includes/related-products.php`
+Status: staging · Prio: medium · Code: `includes/related-products.php`
 
 **Value:** "Ähnliche Produkte" on the product page shows other releases of the same artist first, then the products that share the most genres, instead of a random pick from the catalogue.
 
@@ -22,9 +22,9 @@ Behaviour, for the product being viewed:
 The block stays as it is; the plugin replaces the product list it renders.
 
 - `woocommerce_related_products` (`$related_ids, $product_id, $args`) runs after WooCommerce's own lookup and transient [Code]. The filter ignores the incoming list and returns the ranked IDs. The block then queries `post__in` with these IDs [Code, `ProductCollection/HandlerRegistry.php`]; an empty list makes the block render nothing.
-- Ranking in one `$wpdb` query over `term_relationships`/`term_taxonomy`: published products that share at least one `artist` or `product_tag` term with the current product, scored `SUM(artist match × 1000 + tag match × 1)`, `ORDER BY score DESC, post_date DESC`, current product excluded, limit 100 (the block's own limit for this collection). Out-of-stock products are excluded by the `product_visibility` term `outofstock`, the same way WooCommerce's own query does it, so the result does not depend on the block's stock-status setting.
+- Ranking in one `$wpdb` query over `term_relationships`/`term_taxonomy`: published products that share at least one `artist` or `product_tag` term with the current product, scored `SUM(artist match × 1000 + tag match × 1)`, `ORDER BY score DESC, post_date DESC`, current product excluded, limit 100 (the block's own limit for this collection). Out-of-stock products are excluded by the `product_visibility` term `outofstock` (term ID from `wc_get_product_visibility_term_ids()`), so the result does not depend on the block's stock-status setting. Catalog-hidden products are already filtered by the block itself [Code, `QueryBuilder.php`].
 - `woocommerce_product_related_posts_shuffle`: `false`, otherwise WooCommerce shuffles the list after the filter [Code].
-- `query_loop_block_query_vars`, priority after WooCommerce's `build_frontend_query` (10): for the related collection set `orderby` to `post__in`, because the block otherwise sorts by its `orderBy` attribute (currently title). The block exposes the collection name in the block context (`collection`); the exact key is verified during implementation.
+- `query_loop_block_query_vars`, priority after WooCommerce's `build_frontend_query` (10): for the related collection set `orderby` to `post__in`, because the block otherwise sorts by its `orderBy` attribute (currently title). The block exposes the collection name as `$block->context['collection']` [Code, `ProductCollection/Controller.php`].
 - No caching by the plugin: one indexed query per product page view.
 
 ## Test on staging
