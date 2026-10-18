@@ -24,7 +24,6 @@ rsync -rlpt --delete "$@" \
 	--exclude CLAUDE.md \
 	--exclude README.md \
 	--exclude docs \
-	--exclude tests \
 	--exclude deploy.sh \
 	./ "$HOST:$WP_DIR/wp-content/plugins/yuc-shop-features/"
 
