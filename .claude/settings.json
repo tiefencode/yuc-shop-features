@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | { read -r f; case \"$f\" in *.php) out=$(php -l \"$f\" 2>&1) || { echo \"$out\" >&2; exit 2; } ;; *.js) out=$(node --check \"$f\" 2>&1) || { echo \"$out\" >&2; exit 2; } ;; esac; }",
+            "timeout": 15,
+            "statusMessage": "Linting edited file"
+          }
+        ]
+      }
+    ]
+  }
+}
