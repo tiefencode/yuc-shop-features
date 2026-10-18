@@ -18,6 +18,7 @@ find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l > /dev/
 
 rsync -rlpt --delete "$@" \
 	--exclude .git \
+	--exclude .claude \
 	--exclude .DS_Store \
 	--exclude .editorconfig \
 	--exclude .gitignore \
