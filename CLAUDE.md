@@ -17,4 +17,5 @@ WooCommerce plugin for youngandcold.de. Repository root = plugin directory. What
 - Escape output (`esc_html`, `esc_attr`, `esc_url`, `wp_kses_post`).
 - Commits: Conventional Commits, English. Before committing run `php -l` on every PHP file and `node --check` on every JS file, read `git diff --staged`, stage files explicitly (no `git add -A`), one logical change per commit, spec updated in the same commit when behaviour changes.
 - Branches: one feature branch per spec feature (`feat/<name>`); `main` is what runs in production. Merge into `main` only after the staging test passed.
-- Deployment: `./deploy.sh staging|production` (rsync + W3 Total Cache flush), only when the developer asks. Feature branches go to staging (`https://staging.youngandcold.de`, basic auth, credentials from the developer); `main` goes to production after the developer's go.
+- Deployment: `./deploy.sh staging|production` (rsync + W3 Total Cache flush), only when the developer asks. Feature branches go to staging (`https://staging.youngandcold.de`, basic auth via `$STAGING_AUTH` from `.claude/settings.local.json`); `main` goes to production after the developer's go.
+- After deploying to staging, run the `staging-check` subagent for the feature; it verifies the spec's "Test on staging" cases from the page source and reports what remains to test manually.
