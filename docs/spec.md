@@ -17,6 +17,7 @@ Site facts (2026-10-18): Twenty Twenty-Five block theme, WooCommerce 11.2.1. Car
 | 7 | low | [Eager first listing image](features/07-listing-first-image.md) | live |
 | 8 | very low | [Bundle blocks script only on cart/checkout](features/08-bundle-blocks-script.md) | live |
 | 9 | medium | [Related products by artist and genre](features/09-related-products.md) | live |
+| 10 | – | [Pre-order delivery hint](features/10-preorder-hint.md) | draft |
 
 Status values: `draft` (spec started, open points left) → `planned` (spec complete, no code) → `staging` (on a feature branch, deployed to staging) → `live` (merged to `main`, deployed to production).
 
