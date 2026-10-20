@@ -13,6 +13,7 @@ WooCommerce plugin for youngandcold.de. Repository root = plugin directory. What
 - The old theme code is the reference for *behaviour*, not for *implementation*. It is often sloppy; do not copy its workarounds. "Better" means fewer moving parts and current WordPress/WooCommerce APIs, never more code, options, or structure. A feature that is already a few plain lines stays a few plain lines.
 - Procedural PHP, prefix `yuc_`, no classes, no abstractions beyond what the spec lists.
 - One file per feature in `includes/`; the bootstrap loads `includes/*.php` automatically.
+- When starting work on a feature whose spec still has `Defined at planning.` sections or open questions, clarify them with the developer in an interview first, record the answers in the feature file, then build.
 - Plain JavaScript only, no jQuery. Enqueue assets only on the pages that need them.
 - Escape output (`esc_html`, `esc_attr`, `esc_url`, `wp_kses_post`).
 - Commits: Conventional Commits, English. Before committing run `php -l` on every PHP file and `node --check` on every JS file, read `git diff --staged`, stage files explicitly (no `git add -A`), one logical change per commit, spec updated in the same commit when behaviour changes.

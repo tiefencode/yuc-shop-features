@@ -18,29 +18,38 @@ Site facts (2026-10-18): Twenty Twenty-Five block theme, WooCommerce 11.2.1. Car
 | 8 | very low | [Bundle blocks script only on cart/checkout](features/08-bundle-blocks-script.md) | live |
 | 9 | medium | [Related products by artist and genre](features/09-related-products.md) | live |
 
-Status values: `planned` (spec written, no code) → `staging` (on a feature branch, deployed to staging) → `live` (merged to `main`, deployed to production).
+Status values: `draft` (spec started, open points left) → `planned` (spec complete, no code) → `staging` (on a feature branch, deployed to staging) → `live` (merged to `main`, deployed to production).
 
 ## Writing a feature
 
 Create `docs/features/NN-<slug>.md` with:
 
 ```
-# <Feature name>
+# Feature: <name>
 
-Status: planned · Prio: <high|medium|low> · Code: <files, once known>
+Status: draft
 
-**Value:** <one sentence: why this exists, from the customer's or shop's view>
+## Scope
 
-<Origin, if ported or triggered by an analysis.>
+In: <what the feature covers>
+Out: <what it explicitly does not cover>
 
-<What the feature does, in behaviour terms.>
+## Dependencies
 
-## Implementation
-<Hooks, APIs, markup, decisions. Mark source-verified claims with [Code].>
+| File | Size | Content |
+|---|---|---|
+| <path> | <dimensions, if an asset> | <what it is> |
 
-## Test on staging
-<Cases that prove the behaviour; the staging-check agent runs the ones visible in page source.>
+## Parameters
+
+## Requirements
+
+## Scenarios
+
+## Open questions
 ```
+
+Sections that are not known yet contain `Defined at planning.` Features 1–9 use the previous layout and stay as they are.
 
 Keep it short. The old theme code, where it exists, defines the behaviour to keep, not how to build it; "better" means simpler, not more.
 
