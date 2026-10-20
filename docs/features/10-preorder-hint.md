@@ -1,28 +1,29 @@
-# Feature: Pre-order delivery hint
+# Pre-order delivery hint
 
-Status: draft
+Status: draft · Prio: – · Code: –
+
+**Value:** Customers see the agreed delivery period for pre-orders; a plain "Preorder" label is not always enough.
 
 ## Scope
-
-In: checkout and order confirmation show the agreed delivery period for pre-order items; a plain "Preorder" label is not always enough.
+In: checkout and order confirmation.
 Out: Defined at planning.
 
 ## Dependencies
-
 Defined at planning.
 
 ## Parameters
-
 Defined at planning.
 
 ## Requirements
-
 Defined at planning.
 
-## Scenarios
+## Implementation
+Defined at planning.
 
+## Test on staging
 Defined at planning.
 
 ## Open questions
-
-Defined at planning.
+- Priority.
+- Order confirmation: thank-you page, confirmation email, or both?
+- Where the agreed delivery period comes from.

@@ -26,31 +26,38 @@ Status values: `draft` (spec started, open points left) → `planned` (spec comp
 Create `docs/features/NN-<slug>.md` with:
 
 ```
-# Feature: <name>
+# <Feature name>
 
-Status: draft
+Status: draft · Prio: <high|medium|low> · Code: <files, once known>
+
+**Value:** <one sentence: why this exists, from the customer's or shop's view>
+
+<Origin, if ported or triggered by an analysis.>
 
 ## Scope
-
 In: <what the feature covers>
 Out: <what it explicitly does not cover>
 
 ## Dependencies
-
-| File | Size | Content |
-|---|---|---|
-| <path> | <dimensions, if an asset> | <what it is> |
+<Hooks, product meta, plugins and other features it relies on.>
 
 ## Parameters
+<Values it uses: texts, thresholds, zones.>
 
 ## Requirements
+<What the feature does, in behaviour terms.>
 
-## Scenarios
+## Implementation
+<Hooks, APIs, markup, decisions. Mark source-verified claims with [Code].>
+
+## Test on staging
+<Cases that prove the behaviour; the staging-check agent runs the ones visible in page source.>
 
 ## Open questions
+<Points to clarify in the interview; empty before the status moves to `planned`.>
 ```
 
-Sections that are not known yet contain `Defined at planning.` Features 1–9 use the previous layout and stay as they are.
+Leave out sections that do not apply. Points not known yet read `Defined at planning.` Features 1–9 predate Scope, Dependencies, Parameters, Requirements and Open questions and stay as they are.
 
 Keep it short. The old theme code, where it exists, defines the behaviour to keep, not how to build it; "better" means simpler, not more.
 
